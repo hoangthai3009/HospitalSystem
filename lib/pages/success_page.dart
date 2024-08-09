@@ -11,12 +11,34 @@ class SuccessPage extends StatefulWidget {
 }
 
 class _SuccessPageState extends State<SuccessPage> {
-  Future _postBooking() async {
+  Future<void> _postBooking(BuildContext context) async {
     try {
       await BookingService().postBooking(booking: widget.bookingData);
+      _showSuccessDialog(context);
     } catch (e) {
       throw Exception(e);
     }
+  }
+
+  void _showSuccessDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Thành công"),
+          content: const Text("Đặt lịch thành công!"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.popUntil(context, (route) => route.isFirst);
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -31,16 +53,14 @@ class _SuccessPageState extends State<SuccessPage> {
           children: [
             Text('Profile ID: ${widget.bookingData.profileID}'),
             Text('Citizen ID: ${widget.bookingData.citizenID}'),
-            Text(
-                'Full Name: ${widget.bookingData.firstName} ${widget.bookingData.lastName}'),
+            Text('Full Name: ${widget.bookingData.firstName} ${widget.bookingData.lastName}'),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    _postBooking().then((_) =>
-                        Navigator.popUntil(context, (route) => route.isFirst));
+                    _postBooking(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[400],

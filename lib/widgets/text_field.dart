@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-Widget myTextField(TextEditingController controller, String labelText,
-    {int length = 200,
-    bool isNumber = false,
-    bool haveIcon = false,
-    VoidCallback? onIconPressed}) {
+enum InputType { text, number, email }
+
+Widget myTextField(
+  TextEditingController controller,
+  String labelText, {
+  int length = 200,
+  InputType inputType = InputType.text,
+  bool haveIcon = false,
+  VoidCallback? onIconPressed,
+}) {
   ValueNotifier<String?> errorNotifier = ValueNotifier<String?>(null);
   FocusNode focusNode = FocusNode();
 
   focusNode.addListener(() {
     if (!focusNode.hasFocus) {
-      // Kiểm tra khi mất tiêu điểm
       if (controller.text.isEmpty) {
         errorNotifier.value = 'Trường này không được để trống';
       } else {
@@ -19,6 +23,18 @@ Widget myTextField(TextEditingController controller, String labelText,
       }
     }
   });
+
+  TextInputType getKeyboardType() {
+    switch (inputType) {
+      case InputType.number:
+        return TextInputType.number;
+      case InputType.email:
+        return TextInputType.emailAddress;
+      case InputType.text:
+      default:
+        return TextInputType.text;
+    }
+  }
 
   return Padding(
     padding: const EdgeInsets.only(bottom: 16.0),
@@ -28,21 +44,48 @@ Widget myTextField(TextEditingController controller, String labelText,
         return TextField(
           focusNode: focusNode,
           textCapitalization: TextCapitalization.words,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: getKeyboardType(),
           controller: controller,
           inputFormatters: [
             LengthLimitingTextInputFormatter(length),
+            if (inputType == InputType.number) FilteringTextInputFormatter.digitsOnly,
           ],
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyLarge!.color,
+          ),
           decoration: InputDecoration(
-            suffixIcon: haveIcon && controller.text.isNotEmpty
-                ? TextButton(
+            suffixIcon: haveIcon
+                ? IconButton(
+                    icon: const Icon(Icons.check),
                     onPressed: onIconPressed,
-                    child: const Text('Kiểm Tra'),
                   )
                 : null,
             labelText: labelText,
-            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: Theme.of(context).scaffoldBackgroundColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2.0,
+              ),
+            ),
             errorText: errorText,
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16.0,
+              horizontal: 16.0,
+            ),
           ),
         );
       },

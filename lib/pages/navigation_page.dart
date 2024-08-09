@@ -44,8 +44,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         child: Column(
           children: [
             DrawerHeader(
-              child:
-                  Image.network('https://hoso.bvctch.vn/assets/img/logo.png'),
+              child: Image.network('https://hoso.bvctch.vn/assets/img/logo.png'),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 25.0),

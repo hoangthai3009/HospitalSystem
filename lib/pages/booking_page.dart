@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:giao_dien_app_benh_vien/components/name_utils.dart';
 import 'package:giao_dien_app_benh_vien/pages/success_page.dart';
 import 'package:intl/intl.dart';
 
@@ -28,30 +29,12 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
-  late TextEditingController _profileIdController,
-      _citizenIDController,
-      _phoneNumberController,
-      _fullNameController,
-      _dobController,
-      _emailController,
-      _addressController,
-      _appointmentDateController;
+  late TextEditingController _profileIdController, _citizenIDController, _phoneNumberController, _fullNameController, _dobController, _emailController, _addressController, _appointmentDateController;
 
   final List<String> _genders = ["Nam", "Nữ"];
   bool _isMale = true;
 
-  final List<String> _appointmentTimes = [
-    '7:00',
-    '8:00',
-    '9:00',
-    '10:00',
-    '11:00',
-    '12:00',
-    '13:00',
-    '14:00',
-    '15:00',
-    '16:00'
-  ];
+  final List<String> _appointmentTimes = ['7:00', '8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
   String _selectedAppointmentTime = '10:00';
 
   bool _showAdditionalFields = false;
@@ -70,9 +53,9 @@ class _BookingPageState extends State<BookingPage> {
   Clinic? _selectedClinic;
   int? _selectedClinicId;
 
-  List<Country>? _coutries;
-  Country? _selectedCoutry;
-  int? _selectedCoutryId;
+  List<Country>? _countries;
+  Country? _selectedCountry;
+  int? _selectedCountryId;
 
   List<Ethnicity>? _ethnicities;
   Ethnicity? _selectedEthnicity;
@@ -82,9 +65,16 @@ class _BookingPageState extends State<BookingPage> {
   Career? _selectedCareer;
   int? _selectedCareerId;
 
+  final ProfileService _profileService = ProfileService();
+
   @override
   void initState() {
     super.initState();
+    _initializeControllers();
+    _loadInitialData();
+  }
+
+  void _initializeControllers() {
     _profileIdController = TextEditingController();
     _citizenIDController = TextEditingController();
     _phoneNumberController = TextEditingController();
@@ -92,18 +82,27 @@ class _BookingPageState extends State<BookingPage> {
     _dobController = TextEditingController();
     _emailController = TextEditingController();
     _addressController = TextEditingController();
-    _appointmentDateController = TextEditingController(
-        text: DateFormat('dd/MM/yyyy').format(DateTime.now()));
+    _appointmentDateController = TextEditingController(text: DateFormat('dd/MM/yyyy').format(DateTime.now()));
     _selectedWardId = '';
-    _loadClinics();
-    _loadCities();
-    _loadCountries();
-    _loadCareers();
-    _loadEthnicities();
+  }
+
+  Future<void> _loadInitialData() async {
+    await Future.wait([
+      _loadClinics(),
+      _loadCities(),
+      _loadCountries(),
+      _loadCareers(),
+      _loadEthnicities(),
+    ]);
   }
 
   @override
   void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _disposeControllers() {
     _profileIdController.dispose();
     _citizenIDController.dispose();
     _phoneNumberController.dispose();
@@ -112,46 +111,58 @@ class _BookingPageState extends State<BookingPage> {
     _emailController.dispose();
     _addressController.dispose();
     _appointmentDateController.dispose();
-    super.dispose();
   }
 
-  final ProfileService _profileService = ProfileService();
-
-  Future _fillData() async {
+  Future<void> _fillData() async {
     try {
-      Profile bookingData = await _profileService.getProfile(
-          profileCode: _profileIdController.text);
+      // Clear current data
+      _citizenIDController.clear();
+      _phoneNumberController.clear();
+      _fullNameController.clear();
+      _dobController.clear();
+      _emailController.clear();
+      _addressController.clear();
+      _cities = null;
+      _districts = null;
+      _wards = null;
+      _selectedCity = null;
+      _selectedDistrict = null;
+      _selectedWard = null;
+      _selectedWardId = '';
+      _isMale = true;
+      _selectedCountry = null;
+      _selectedCountryId = null;
+      _selectedEthnicity = null;
+      _selectedEthnicityId = null;
+      _selectedCareer = null;
+      _selectedCareerId = null;
 
+      // Fill data from profile
+      Profile bookingData = await _profileService.getProfile(profileCode: _profileIdController.text);
       setState(() {
         _citizenIDController.text = bookingData.cccd;
         _phoneNumberController.text = bookingData.sdt;
-        _fullNameController.text = "${bookingData.hoDem}${bookingData.ten}";
-        _dobController.text = DateFormat('dd/MM/yyyy')
-            .format(DateTime.parse(bookingData.ngaySinh));
+        _fullNameController.text = "${bookingData.hoDem} ${bookingData.ten}";
+        _dobController.text = DateFormat('dd/MM/yyyy').format(DateTime.parse(bookingData.ngaySinh));
         _emailController.text = bookingData.email;
+        _loadCities();
         _loadDistricts(bookingData.idTinh);
         _loadWards(bookingData.idHuyen);
-        _selectedCity =
-            Province(id: bookingData.idTinh, name: bookingData.tenTinh);
-        _selectedDistrict =
-            Province(id: bookingData.idHuyen, name: bookingData.tenHuyen);
-        _selectedWard =
-            Province(id: bookingData.idPhuong, name: bookingData.tenPhuong);
+        _selectedCity = Province(id: bookingData.idTinh, name: bookingData.tenTinh);
+        _selectedDistrict = Province(id: bookingData.idHuyen, name: bookingData.tenHuyen);
+        _selectedWard = Province(id: bookingData.idPhuong, name: bookingData.tenPhuong);
         _selectedWardId = bookingData.idPhuong;
         _addressController.text = bookingData.duong;
         _isMale = bookingData.gioiTinh;
-        _selectedCoutry = Country(
-            id: bookingData.idQuocTich!, name: bookingData.tenQuocTich!);
-        _selectedCoutryId = bookingData.idQuocTich;
-        _selectedEthnicity =
-            Ethnicity(id: bookingData.idDanToc!, name: bookingData.tenDanToc!);
+        _selectedCountry = bookingData.idQuocTich != null ? Country(id: bookingData.idQuocTich!, name: bookingData.tenQuocTich!) : null;
+        _selectedCountryId = bookingData.idQuocTich;
+        _selectedEthnicity = bookingData.idDanToc != null ? Ethnicity(id: bookingData.idDanToc!, name: bookingData.tenDanToc!) : null;
         _selectedEthnicityId = bookingData.idDanToc;
-        _selectedCareer = Career(
-            id: bookingData.idNgheNghiep!, name: bookingData.tenNgheNghiep!);
+        _selectedCareer = bookingData.idNgheNghiep != null ? Career(id: bookingData.idNgheNghiep!, name: bookingData.tenNgheNghiep!) : null;
         _selectedCareerId = bookingData.idNgheNghiep;
       });
     } catch (e) {
-      throw Exception(e);
+      throw Exception('Error filling data: $e');
     }
   }
 
@@ -160,42 +171,43 @@ class _BookingPageState extends State<BookingPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         myDropdown(
-          _coutries?.map((e) => e.name).toList(),
-          _selectedCoutry?.name,
+          context,
+          _countries?.map((e) => e.name).toList(),
+          _selectedCountry?.name,
           (String? value) {
             setState(() {
-              _selectedCoutry =
-                  _coutries?.firstWhere((element) => element.name == value);
-              _selectedCoutryId = _selectedCoutry?.id ?? 0;
+              _selectedCountry = _countries?.firstWhere((element) => element.name == value);
+              _selectedCountryId = _selectedCountry?.id ?? 0;
             });
           },
           'Quốc tịch',
         ),
         myDropdown(
+          context,
           _ethnicities?.map((e) => e.name).toList(),
           _selectedEthnicity?.name,
           (String? value) {
             setState(() {
-              _selectedEthnicity =
-                  _ethnicities?.firstWhere((element) => element.name == value);
+              _selectedEthnicity = _ethnicities?.firstWhere((element) => element.name == value);
               _selectedEthnicityId = _selectedEthnicity?.id ?? 0;
             });
           },
           'Dân tộc',
         ),
         myDropdown(
+          context,
           _careers?.map((e) => e.name).toList(),
           _selectedCareer?.name,
           (String? value) {
             setState(() {
-              _selectedCareer =
-                  _careers?.firstWhere((element) => element.name == value);
+              _selectedCareer = _careers?.firstWhere((element) => element.name == value);
               _selectedCareerId = _selectedCareer?.id ?? 0;
             });
           },
           'Nghề Nghiệp',
         ),
         myDropdown(
+          context,
           _appointmentTimes,
           _selectedAppointmentTime,
           (String? value) => setState(() => _selectedAppointmentTime = value!),
@@ -251,9 +263,9 @@ class _BookingPageState extends State<BookingPage> {
 
   Future<void> _loadCountries() async {
     try {
-      final coutries = await LocationService.getCountries();
+      final countries = await LocationService.getCountries();
       setState(() {
-        _coutries = coutries;
+        _countries = countries;
       });
     } catch (e) {
       throw Exception('Error loading countries: $e');
@@ -283,14 +295,7 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   bool _checkValid() {
-    return _citizenIDController.text.isNotEmpty &&
-        _phoneNumberController.text.isNotEmpty &&
-        _fullNameController.text.isNotEmpty &&
-        _dobController.text.isNotEmpty &&
-        _emailController.text.isNotEmpty &&
-        _selectedWardId.isNotEmpty &&
-        _addressController.text.isNotEmpty &&
-        _selectedClinicId != null;
+    return _citizenIDController.text.isNotEmpty && _phoneNumberController.text.isNotEmpty && _fullNameController.text.isNotEmpty && _dobController.text.isNotEmpty && _emailController.text.isNotEmpty && _selectedWardId.isNotEmpty && _addressController.text.isNotEmpty && _selectedClinicId != null;
   }
 
   @override
@@ -322,22 +327,19 @@ class _BookingPageState extends State<BookingPage> {
               ),
             ),
             const SizedBox(height: 16.0),
-            myTextField(_profileIdController, 'Mã Hồ Sơ (nếu có)',
-                length: 12, haveIcon: true, onIconPressed: _fillData),
-            myTextField(_citizenIDController, 'CCCD (*)',
-                length: 12, isNumber: true),
-            myTextField(_phoneNumberController, 'Điện thoại (*)',
-                length: 10, isNumber: true),
+            myTextField(_profileIdController, 'Mã Hồ Sơ (nếu có)', length: 12, haveIcon: true, onIconPressed: _fillData),
+            myTextField(_citizenIDController, 'CCCD (*)', length: 12, inputType: InputType.number),
+            myTextField(_phoneNumberController, 'Điện thoại (*)', length: 10, inputType: InputType.number),
             myTextField(_fullNameController, 'Họ Tên (*)'),
             myDatePickerField(_dobController, 'Ngày sinh (*)', context),
-            myTextField(_emailController, 'Email (*)'),
+            myTextField(_emailController, 'Email (*)', inputType: InputType.email),
             myDropdown(
+              context,
               _cities?.map((e) => e.name).toList(),
               _selectedCity?.name,
               (String? value) {
                 setState(() {
-                  _selectedCity =
-                      _cities?.firstWhere((element) => element.name == value);
+                  _selectedCity = _cities?.firstWhere((element) => element.name == value);
                   _districts = null;
                   _selectedDistrict = null;
                   _wards = null;
@@ -349,12 +351,12 @@ class _BookingPageState extends State<BookingPage> {
               'Tỉnh/TP (*)',
             ),
             myDropdown(
+              context,
               _districts?.map((e) => e.name).toList(),
               _selectedDistrict?.name,
               (String? value) {
                 setState(() {
-                  _selectedDistrict = _districts
-                      ?.firstWhere((element) => element.name == value);
+                  _selectedDistrict = _districts?.firstWhere((element) => element.name == value);
                   _wards = null;
                   _selectedWard = null;
                   _selectedWardId = '';
@@ -364,12 +366,12 @@ class _BookingPageState extends State<BookingPage> {
               'Quận/Huyện (*)',
             ),
             myDropdown(
+              context,
               _wards?.map((e) => e.name).toList(),
               _selectedWard?.name,
               (String? value) {
                 setState(() {
-                  _selectedWard =
-                      _wards?.firstWhere((element) => element.name == value);
+                  _selectedWard = _wards?.firstWhere((element) => element.name == value);
                   _selectedWardId = _selectedWard?.id ?? '';
                 });
               },
@@ -377,6 +379,7 @@ class _BookingPageState extends State<BookingPage> {
             ),
             myTextField(_addressController, 'Số nhà/Đường (*)'),
             myDropdown(
+              context,
               _genders,
               _isMale ? 'Nam' : 'Nữ',
               (String? value) {
@@ -386,19 +389,18 @@ class _BookingPageState extends State<BookingPage> {
               },
               'Giới tính',
             ),
-            myDatePickerField(
-                _appointmentDateController, 'Ngày Khám (*)', context),
+            myDatePickerField(_appointmentDateController, 'Ngày Khám (*)', context),
             myDropdown(
+              context,
               _clinics?.map((e) => e.name).toList(),
               _selectedClinic?.name,
               (String? value) {
                 setState(() {
-                  _selectedClinic =
-                      _clinics?.firstWhere((element) => element.name == value);
+                  _selectedClinic = _clinics?.firstWhere((element) => element.name == value);
                   _selectedClinicId = _selectedClinic?.id ?? 0;
                 });
               },
-              'Phòng Khám',
+              'Phòng Khám(*)',
             ),
             TextButton(
               onPressed: () {
@@ -406,8 +408,7 @@ class _BookingPageState extends State<BookingPage> {
                   _showAdditionalFields = !_showAdditionalFields;
                 });
               },
-              child: Text(
-                  _showAdditionalFields ? 'Ẩn thông tin' : 'Thêm thông tin'),
+              child: Text(_showAdditionalFields ? 'Ẩn thông tin' : 'Thêm thông tin'),
             ),
             const SizedBox(height: 16.0),
             if (_showAdditionalFields) _buildAdditionalFields(),
@@ -420,18 +421,16 @@ class _BookingPageState extends State<BookingPage> {
                       showMessage(context, "Vui lòng điền đầy đủ thông tin.");
                       return;
                     }
-
-                    String dateOfBirth = DateFormat('yyyy-MM-dd').format(
-                        DateFormat('dd/MM/yyyy').parse(_dobController.text));
-                    String dayOfTheExamination = DateFormat('yyyy-MM-dd')
-                        .format(DateFormat('dd/MM/yyyy')
-                            .parse(_appointmentDateController.text));
+                    String dateOfBirth = DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(_dobController.text));
+                    String dayOfTheExamination = DateFormat('yyyy-MM-dd').format(DateFormat('dd/MM/yyyy').parse(_appointmentDateController.text));
+                    String firstName = NameUtils.getMiddleName(_fullNameController.text);
+                    String lastName = NameUtils.getLastName(_fullNameController.text);
 
                     Booking bookingData = Booking(
                       profileID: _profileIdController.text,
                       citizenID: _citizenIDController.text,
-                      firstName: _fullNameController.text,
-                      lastName: _fullNameController.text,
+                      firstName: firstName,
+                      lastName: lastName,
                       phoneNumber: _phoneNumberController.text,
                       dateOfBirth: dateOfBirth,
                       email: _emailController.text,
@@ -440,7 +439,7 @@ class _BookingPageState extends State<BookingPage> {
                       address: _addressController.text,
                       medicalExaminationDay: dayOfTheExamination,
                       roomID: _selectedClinicId!,
-                      countryID: _selectedCoutryId,
+                      countryID: _selectedCountryId,
                       ethnicityID: _selectedEthnicityId,
                       careerID: _selectedCareerId,
                       medicalExaminationTime: _selectedAppointmentTime,
@@ -449,8 +448,7 @@ class _BookingPageState extends State<BookingPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SuccessPage(bookingData: bookingData),
+                        builder: (context) => SuccessPage(bookingData: bookingData),
                       ),
                     );
                   },

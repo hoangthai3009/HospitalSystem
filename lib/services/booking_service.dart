@@ -1,4 +1,5 @@
 import 'package:giao_dien_app_benh_vien/models/booking.dart';
+import 'package:giao_dien_app_benh_vien/models/history.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -31,6 +32,18 @@ class BookingService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to post DangKyKham');
+    }
+  }
+
+  Future<List<History>> getHistoryBooking(String profileID, String phoneNumber) async {
+    final response = await http.post(
+      ApiUrls().apiBookingList(profileID, phoneNumber),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((item) => History.fromJson(item)).toList();
+    } else {
+      throw Exception('Failed to fetch HistoryBooking');
     }
   }
 }

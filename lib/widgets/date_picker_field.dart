@@ -12,7 +12,10 @@ Future<DateTime?> selectDate(BuildContext context) async {
 }
 
 Widget myDatePickerField(
-    TextEditingController controller, String labelText, BuildContext context) {
+  TextEditingController controller,
+  String labelText,
+  BuildContext context,
+) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 16.0),
     child: InkWell(
@@ -23,12 +26,40 @@ Widget myDatePickerField(
           controller.text = formattedDate;
         }
       },
-      child: IgnorePointer(
+      child: AbsorbPointer(
         child: TextField(
           controller: controller,
+          readOnly: true,
           decoration: InputDecoration(
             labelText: labelText,
-            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: Theme.of(context).scaffoldBackgroundColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.0),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2.0,
+              ),
+            ),
+            prefixIcon: Icon(
+              Icons.calendar_today,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 16.0,
+              horizontal: 16.0,
+            ),
           ),
         ),
       ),

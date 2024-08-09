@@ -44,8 +44,7 @@ class MyApp extends StatelessWidget {
         darkTheme: darkTheme,
         routes: {
           '/map': (context) => const MapPage(),
-          '/medicalExaminationInstructions': (context) =>
-              const MedicalExaminationInstructionsPage(),
+          '/medicalExaminationInstructions': (context) => const MedicalExaminationInstructionsPage(),
           '/booking': (context) => const BookingPage(),
           '/lookupPrescriptions': (context) => const LookupPrescriptionsPage(),
           '/introduction': (context) => const IntroductionPage(),

@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(
               iconData,
-              size: 56,
+              size: 50,
               color: Colors.blue[800],
             ),
             const SizedBox(height: 16),
